@@ -43,6 +43,7 @@
         <module>bean-validation-hibernate5-tests</module>
         <module>packaging-tests</module>
         <module>report-aggregate</module>
+        <module>instancio-jpa-tests</module>
     </modules>
 
     <build>

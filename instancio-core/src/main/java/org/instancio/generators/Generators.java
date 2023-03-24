@@ -74,6 +74,10 @@ public class Generators {
         this.context = context;
     }
 
+    public GeneratorContext getContext() {
+        return context;
+    }
+
     /**
      * Customises generated {@link String} values.
      *
