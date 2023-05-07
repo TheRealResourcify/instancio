@@ -24,24 +24,19 @@ import jakarta.persistence.metamodel.Metamodel;
 import jakarta.persistence.metamodel.SingularAttribute;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.instancio.Node;
-import org.instancio.PredicateSelector;
-import org.instancio.TargetSelector;
-import org.instancio.internal.selectors.PredicateSelectorImpl;
-import org.instancio.internal.selectors.SelectorBuilder;
-import org.instancio.internal.selectors.SelectorTargetKind;
+import org.instancio.internal.nodes.InternalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JpaGeneratedIdSelectorBuilder implements TargetSelector, SelectorBuilder {
-    private static Logger LOG = LoggerFactory.getLogger(JpaGeneratedIdSelectorBuilder.class);
+public final class JpaGeneratedIdSelector extends PredicateSelectorImpl {
+    private static Logger LOG = LoggerFactory.getLogger(JpaGeneratedIdSelector.class);
 
-    private final Metamodel metamodel;
-    private static final Function<Metamodel, Predicate<Node>> JPA_GENERATED_ID_PREDICATE
+    private static final Function<Metamodel, Predicate<InternalNode>> JPA_GENERATED_ID_PREDICATE
         = metamodel -> node -> {
-        if (node.getParentTargetClass() != null && node.getField() != null) {
+        InternalNode parent = node.getParent();
+        if (parent != null && parent.getTargetClass() != null && node.getField() != null) {
             try {
-                EntityType<?> entityType = metamodel.entity(node.getParentTargetClass());
+                EntityType<?> entityType = metamodel.entity(parent.getTargetClass());
                 SingularAttribute<?, ?> idAttr = resolveIdAttribute(entityType, node.getField().getName());
                 return idAttr != null && getAnnotation(idAttr, GeneratedValue.class) != null;
             } catch (IllegalArgumentException e) {
@@ -52,22 +47,11 @@ public class JpaGeneratedIdSelectorBuilder implements TargetSelector, SelectorBu
         return false;
     };
 
-    private JpaGeneratedIdSelectorBuilder(Metamodel metamodel) {
-        this.metamodel = metamodel;
+    private JpaGeneratedIdSelector(final Predicate<InternalNode> nodePredicate, final String apiInvocationDescription) {
+        super(nodePredicate, apiInvocationDescription);
     }
 
-    public static JpaGeneratedIdSelectorBuilder jpaGeneratedId(Metamodel metamodel) {
-        return new JpaGeneratedIdSelectorBuilder(metamodel);
-    }
-
-    @Override
-    public PredicateSelector build() {
-        return new PredicateSelectorImpl(
-            SelectorTargetKind.NODE,
-            null,
-            null,
-            JPA_GENERATED_ID_PREDICATE.apply(metamodel),
-            "jpaGeneratedId()"
-        );
+    public static JpaGeneratedIdSelector jpaGeneratedId(Metamodel metamodel) {
+        return new JpaGeneratedIdSelector(JPA_GENERATED_ID_PREDICATE.apply(metamodel), "jpaGeneratedId()");
     }
 }

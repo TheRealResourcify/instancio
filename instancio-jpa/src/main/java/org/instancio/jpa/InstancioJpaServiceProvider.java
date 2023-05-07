@@ -61,7 +61,8 @@ public class InstancioJpaServiceProvider implements InstancioServiceProvider {
     public GeneratorProvider getGeneratorProvider() {
         Map<Node, Generator<?>> contextualGenerators = new HashMap<>();
         return (node, generators) -> {
-            Class<?> parentTargetClass = node.getParentTargetClass();
+            // TODO: Cannot access node parent at this point
+            Class<?> parentTargetClass = node.getParent().getTargetClass();
             Field field = node.getField();
             if (parentTargetClass != null && field != null && metamodel != null) {
                 EntityType<?> entityType;

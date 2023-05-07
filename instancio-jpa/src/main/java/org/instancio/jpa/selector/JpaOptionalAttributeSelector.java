@@ -21,24 +21,19 @@ import jakarta.persistence.metamodel.Metamodel;
 import jakarta.persistence.metamodel.SingularAttribute;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.instancio.Node;
-import org.instancio.PredicateSelector;
-import org.instancio.TargetSelector;
-import org.instancio.internal.selectors.PredicateSelectorImpl;
-import org.instancio.internal.selectors.SelectorBuilder;
-import org.instancio.internal.selectors.SelectorTargetKind;
+import org.instancio.internal.nodes.InternalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JpaOptionalAttributeSelectorBuilder implements TargetSelector, SelectorBuilder {
-    private static Logger LOG = LoggerFactory.getLogger(JpaOptionalAttributeSelectorBuilder.class);
+public final class JpaOptionalAttributeSelector extends PredicateSelectorImpl {
+    private static Logger LOG = LoggerFactory.getLogger(JpaOptionalAttributeSelector.class);
 
-    private final Metamodel metamodel;
-    private static final Function<Metamodel, Predicate<Node>> JPA_OPTIONAL_ATTRIBUTE_PREDICATE
+    private static final Function<Metamodel, Predicate<InternalNode>> JPA_OPTIONAL_ATTRIBUTE_PREDICATE
         = metamodel -> node -> {
-        if (node.getParentTargetClass() != null && node.getField() != null) {
+        InternalNode parent = node.getParent();
+        if (parent != null && parent.getTargetClass() != null && node.getField() != null) {
             try {
-                ManagedType<?> managedType = metamodel.managedType(node.getParentTargetClass());
+                ManagedType<?> managedType = metamodel.managedType(parent.getTargetClass());
                 Attribute<?, ?> attr = managedType.getAttribute(node.getField().getName());
                 return attr.isCollection() || ((SingularAttribute<?, ?>) attr).isOptional();
             } catch (IllegalArgumentException e) {
@@ -49,22 +44,12 @@ public class JpaOptionalAttributeSelectorBuilder implements TargetSelector, Sele
         return false;
     };
 
-    private JpaOptionalAttributeSelectorBuilder(Metamodel metamodel) {
-        this.metamodel = metamodel;
+    private JpaOptionalAttributeSelector(final Predicate<InternalNode> nodePredicate, final String apiInvocationDescription) {
+        super(nodePredicate, apiInvocationDescription);
     }
 
-    public static JpaOptionalAttributeSelectorBuilder jpaOptionalAttribute(Metamodel metamodel) {
-        return new JpaOptionalAttributeSelectorBuilder(metamodel);
-    }
 
-    @Override
-    public PredicateSelector build() {
-        return new PredicateSelectorImpl(
-            SelectorTargetKind.NODE,
-            null,
-            null,
-            JPA_OPTIONAL_ATTRIBUTE_PREDICATE.apply(metamodel),
-            "jpaOptionalAttribute()"
-        );
+    public static JpaOptionalAttributeSelector jpaOptionalAttribute(Metamodel metamodel) {
+        return new JpaOptionalAttributeSelector(JPA_OPTIONAL_ATTRIBUTE_PREDICATE.apply(metamodel), "jpaOptionalAttribute()");
     }
 }

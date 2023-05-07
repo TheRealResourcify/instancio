@@ -44,11 +44,6 @@ public final class NodeImpl implements Node {
     }
 
     @Override
-    public Class<?> getParentTargetClass() {
-        return field == null ? null : field.getDeclaringClass();
-    }
-
-    @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof NodeImpl)) return false;

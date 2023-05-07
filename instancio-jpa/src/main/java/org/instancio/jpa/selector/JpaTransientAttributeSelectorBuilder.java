@@ -23,23 +23,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.instancio.Node;
-import org.instancio.PredicateSelector;
-import org.instancio.TargetSelector;
-import org.instancio.internal.selectors.PredicateSelectorImpl;
-import org.instancio.internal.selectors.SelectorBuilder;
-import org.instancio.internal.selectors.SelectorTargetKind;
+import org.instancio.internal.nodes.InternalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JpaTransientAttributeSelectorBuilder implements TargetSelector, SelectorBuilder {
+public final class JpaTransientAttributeSelectorBuilder extends PredicateSelectorImpl {
     private static Logger LOG = LoggerFactory.getLogger(JpaTransientAttributeSelectorBuilder.class);
 
-    private final Metamodel metamodel;
-    private static final Function<Metamodel, Predicate<Node>> JPA_TRANSIENT_PREDICATE = metamodel -> node -> {
-        if (node.getParentTargetClass() != null && node.getField() != null) {
+    private static final Function<Metamodel, Predicate<InternalNode>> JPA_TRANSIENT_PREDICATE = metamodel -> node -> {
+        InternalNode parent = node.getParent();
+        if (parent != null && parent.getTargetClass() != null && node.getField() != null) {
             try {
-                ManagedType<?> managedType = metamodel.managedType(node.getParentTargetClass());
+                ManagedType<?> managedType = metamodel.managedType(parent.getTargetClass());
                 return node.getField().getAnnotation(Transient.class) != null
                     || hasTransientGetter(managedType, node.getField());
             } catch (IllegalArgumentException e) {
@@ -50,27 +45,17 @@ public class JpaTransientAttributeSelectorBuilder implements TargetSelector, Sel
         return false;
     };
 
+    private JpaTransientAttributeSelectorBuilder(Predicate<InternalNode> nodePredicate,
+                                                   String apiInvocationDescription) {
+        super(nodePredicate, apiInvocationDescription);
+    }
+
     private static boolean hasTransientGetter(ManagedType<?> managedType, Field field) {
         Method getter = ReflectionUtils.getGetter(managedType.getJavaType(), field.getName());
         return getter != null && getter.getAnnotation(Transient.class) != null;
     }
 
-    private JpaTransientAttributeSelectorBuilder(Metamodel metamodel) {
-        this.metamodel = metamodel;
-    }
-
     public static JpaTransientAttributeSelectorBuilder jpaTransient(Metamodel metamodel) {
-        return new JpaTransientAttributeSelectorBuilder(metamodel);
-    }
-
-    @Override
-    public PredicateSelector build() {
-        return new PredicateSelectorImpl(
-            SelectorTargetKind.NODE,
-            null,
-            null,
-            JPA_TRANSIENT_PREDICATE.apply(metamodel),
-            "jpaTransient()"
-        );
+        return new JpaTransientAttributeSelectorBuilder(JPA_TRANSIENT_PREDICATE.apply(metamodel), "jpaTransient()");
     }
 }

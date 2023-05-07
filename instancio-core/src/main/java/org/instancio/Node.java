@@ -60,6 +60,4 @@ public interface Node {
      * @since 2.11.0
      */
     Field getField();
-
-    Class<?> getParentTargetClass();
 }
