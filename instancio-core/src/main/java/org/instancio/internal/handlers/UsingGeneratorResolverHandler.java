@@ -18,6 +18,7 @@ package org.instancio.internal.handlers;
 import org.instancio.generator.Generator;
 import org.instancio.internal.GeneratorSpecProcessor;
 import org.instancio.internal.context.ModelContext;
+import org.instancio.internal.generator.AbstractGenerator;
 import org.instancio.internal.generator.GeneratorResolver;
 import org.instancio.internal.generator.GeneratorResult;
 import org.instancio.internal.nodes.InternalNode;
@@ -61,7 +62,9 @@ public class UsingGeneratorResolverHandler implements NodeHandler {
         final Class<?> targetClass = node.getTargetClass();
 
         LOG.trace("Using '{}' generator to create '{}'", generator.getClass().getSimpleName(), targetClass.getName());
-        beanValidationProcessors.process(generator, node);
+        if (generator instanceof AbstractGenerator) {
+            beanValidationProcessors.process(generator, node);
+        }
 
         final Object value = generator.generate(context.getRandom());
         final Object processed = stringPostProcessor.process(value, node, generator);
